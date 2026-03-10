@@ -1,0 +1,20 @@
+idf_component_register(
+    SRCS
+        "main.c"
+        "wifi.c"
+        "host_net.c"
+        "native_bench.c"
+        "wasm_bench.c"
+        "bench_wasm.c"
+    INCLUDE_DIRS
+        "."
+    REQUIRES
+        esp_wifi
+        esp_netif
+        esp_event
+        esp_timer
+        nvs_flash
+        lwip
+        wasm3
+)
+
