@@ -1,0 +1,7 @@
+# ESP-IDF device build output
+device/build/
+
+wasm_module/*.o
+wasm_module/*.wasm
+wasm_module/bench_embedded.wasm
+
