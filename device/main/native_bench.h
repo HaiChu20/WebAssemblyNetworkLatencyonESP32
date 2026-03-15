@@ -2,22 +2,25 @@
 
 #include <stdint.h>
 
-/**
- * Run the native TCP echo benchmark: perform `count` round-trips to the
- * configured server (SERVER_IP, TCP_ECHO_PORT), collect RTTs, and print
- * stats (mean, min, max, total, failures) over serial.
- */
-void native_run_tcp_bench(uint32_t count);
+/** Optional result for CSV output. Pass NULL to run_*_bench for normal log-only behavior. */
+typedef struct bench_result {
+	uint32_t ok;
+	uint32_t fail;
+	int64_t total_us;
+	int64_t per_iter_us;
+} bench_result_t;
 
 /**
- * Run the native UDP echo benchmark: perform `count` round-trips to the
- * configured server (SERVER_IP, UDP_ECHO_PORT), collect RTTs, and print
- * stats (mean, min, max, total, failures) over serial.
+ * Run the native TCP echo benchmark. If result != NULL, fill it (ok, fail, total_us, per_iter_us).
  */
-void native_run_udp_bench(uint32_t count);
+void native_run_tcp_bench(uint32_t count, bench_result_t *result);
 
 /**
- * Run the native ICMP ping benchmark: perform `count` pings to SERVER_IP,
- * collect RTTs, and print stats over serial.
+ * Run the native UDP echo benchmark. If result != NULL, fill it.
  */
-void native_run_ping_bench(uint32_t count);
+void native_run_udp_bench(uint32_t count, bench_result_t *result);
+
+/**
+ * Run the native ICMP ping benchmark. If result != NULL, fill it.
+ */
+void native_run_ping_bench(uint32_t count, bench_result_t *result);

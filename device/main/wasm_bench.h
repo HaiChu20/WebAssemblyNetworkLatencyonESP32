@@ -3,6 +3,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "native_bench.h"
+
 /**
  * Initialize the WASM benchmark: load bench.wasm, create runtime, link host
  * functions (tcp_request_rtt_us, udp_request_rtt_us). Call once after WiFi
@@ -17,19 +19,16 @@ bool wasm_bench_init(void);
 void wasm_bench_cleanup(void);
 
 /**
- * Run the WASM TCP echo benchmark: call the WASM export run_tcp_test(count),
- * then read back stats from WASM memory and print them over serial.
+ * Run the WASM TCP echo benchmark. If result != NULL, fill it.
  */
-void wasm_run_tcp_bench(uint32_t count);
+void wasm_run_tcp_bench(uint32_t count, bench_result_t *result);
 
 /**
- * Run the WASM UDP echo benchmark: call the WASM export run_udp_test(count),
- * then read back stats from WASM memory and print them over serial.
+ * Run the WASM UDP echo benchmark. If result != NULL, fill it.
  */
-void wasm_run_udp_bench(uint32_t count);
+void wasm_run_udp_bench(uint32_t count, bench_result_t *result);
 
 /**
- * Run the WASM ICMP ping benchmark: call the WASM export run_ping_test(count),
- * then read back stats and print them over serial.
+ * Run the WASM ICMP ping benchmark. If result != NULL, fill it.
  */
-void wasm_run_ping_bench(uint32_t count);
+void wasm_run_ping_bench(uint32_t count, bench_result_t *result);

@@ -7,9 +7,6 @@
 #define TCP_ECHO_PORT   9000
 #define UDP_ECHO_PORT   9001
 
-// Number of requests per benchmark run.
-#define BENCH_COUNT     5000
-
 // Delay (ms) between each single-ping call to avoid LwIP socket exhaustion. Subtracted from reported total.
 #define PING_DELAY_MS   100
 

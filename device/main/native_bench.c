@@ -48,7 +48,7 @@
          ESP_LOGW(TAG, "  no successful samples");
  }
  
- void native_run_tcp_bench(uint32_t count)
+ void native_run_tcp_bench(uint32_t count, bench_result_t *result)
  {
      int64_t bench_start_us = esp_timer_get_time();
  
@@ -66,9 +66,15 @@
      int64_t total_us = bench_end_us - bench_start_us;
      int64_t per_iter_us = (count > 0) ? total_us / (int64_t)count : 0;
      ESP_LOGI(TAG, "Native TCP bench total_us=%" PRId64 " per_iter_us=%" PRId64, total_us, per_iter_us);
+     if (result) {
+         result->ok = stats.ok;
+         result->fail = stats.fail;
+         result->total_us = total_us;
+         result->per_iter_us = per_iter_us;
+     }
  }
  
- void native_run_udp_bench(uint32_t count)
+ void native_run_udp_bench(uint32_t count, bench_result_t *result)
  {
      int64_t bench_start_us = esp_timer_get_time();
  
@@ -86,9 +92,15 @@
      int64_t total_us = bench_end_us - bench_start_us;
      int64_t per_iter_us = (count > 0) ? total_us / (int64_t)count : 0;
      ESP_LOGI(TAG, "Native UDP bench total_us=%" PRId64 " per_iter_us=%" PRId64, total_us, per_iter_us);
+     if (result) {
+         result->ok = stats.ok;
+         result->fail = stats.fail;
+         result->total_us = total_us;
+         result->per_iter_us = per_iter_us;
+     }
  }
  
- void native_run_ping_bench(uint32_t count)
+ void native_run_ping_bench(uint32_t count, bench_result_t *result)
  {
      int64_t bench_start_us = esp_timer_get_time();
  
@@ -118,5 +130,11 @@
      }
      int64_t per_iter_us = (count > 0) ? total_us / (int64_t)count : 0;
      ESP_LOGI(TAG, "Native Ping bench total_us=%" PRId64 " (delay_subtracted) per_iter_us=%" PRId64, total_us, per_iter_us);
+     if (result) {
+         result->ok = stats.ok;
+         result->fail = stats.fail;
+         result->total_us = total_us;
+         result->per_iter_us = per_iter_us;
+     }
  }
  

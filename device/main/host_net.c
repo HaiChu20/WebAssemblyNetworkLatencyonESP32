@@ -47,6 +47,8 @@ tcp_request_rtt_us(const char *host, uint16_t port)
         return -1;
     }
 
+    int64_t start_us = esp_timer_get_time();
+
     int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
     if (sock < 0) {
         ESP_LOGE(HOST_NET_LOG_TAG, "Unable to create TCP socket: errno=%d", errno);
@@ -66,8 +68,6 @@ tcp_request_rtt_us(const char *host, uint16_t port)
         close(sock);
         return -1;
     }
-
-    int64_t start_us = esp_timer_get_time();
 
     ssize_t to_send = (ssize_t)ECHO_PAYLOAD_LEN;
     const char *buf = ECHO_PAYLOAD;
@@ -90,8 +90,8 @@ tcp_request_rtt_us(const char *host, uint16_t port)
         return -1;
     }
 
-    int64_t end_us = esp_timer_get_time();
     close(sock);
+    int64_t end_us = esp_timer_get_time();
 
     return end_us - start_us;
 }
@@ -103,6 +103,8 @@ udp_request_rtt_us(const char *host, uint16_t port)
     if (!resolve_host(host, port, &dest_addr)) {
         return -1;
     }
+
+    int64_t start_us = esp_timer_get_time();
 
     int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
     if (sock < 0) {
@@ -116,8 +118,6 @@ udp_request_rtt_us(const char *host, uint16_t port)
     };
     setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
     setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
-
-    int64_t start_us = esp_timer_get_time();
 
     ssize_t sent = sendto(sock,
                           ECHO_PAYLOAD,
@@ -146,8 +146,8 @@ udp_request_rtt_us(const char *host, uint16_t port)
         return -1;
     }
 
-    int64_t end_us = esp_timer_get_time();
     close(sock);
+    int64_t end_us = esp_timer_get_time();
 
     return end_us - start_us;
 }

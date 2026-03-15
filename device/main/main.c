@@ -1,5 +1,8 @@
 #include <stdio.h>
 #include <inttypes.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
 
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
@@ -22,7 +25,7 @@ print_menu(void)
            SERVER_IP,
            TCP_ECHO_PORT,
            UDP_ECHO_PORT);
-    printf("  BENCH_COUNT = %d\n", BENCH_COUNT);
+    printf("  count: enter when run (1–100000)\n");
     printf("--------------------------------------\n");
     printf("  1 = Native TCP\n");
     printf("  2 = WASM TCP\n");
@@ -30,10 +33,38 @@ print_menu(void)
     printf("  4 = WASM UDP\n");
     printf("  5 = Native Ping\n");
     printf("  6 = WASM Ping\n");
+    printf("  7 = Run all (output CSV)\n");
     printf("  0 = Exit\n");
     printf("======================================\n");
     printf("Enter choice: ");
     fflush(stdout);
+}
+
+/* Read a positive integer from stdin (digits until newline). Returns 0 on invalid/empty. */
+static uint32_t
+read_count(void)
+{
+    char buf[16];
+    int i = 0;
+    int c;
+    while (i < (int)sizeof(buf) - 1) {
+        c = getchar();
+        if (c == EOF) {
+            vTaskDelay(pdMS_TO_TICKS(50));
+            continue;
+        }
+        if (c == '\r' || c == '\n') {
+            break;
+        }
+        if (isdigit((unsigned char)c)) {
+            buf[i++] = (char)c;
+        }
+    }
+    buf[i] = '\0';
+    if (i == 0) {
+        return 0;
+    }
+    return (uint32_t)atoi(buf);
 }
 
 static int
@@ -78,35 +109,79 @@ app_main(void)
         printf("%c\n", choice);  // echo back choice
 
         switch (choice) {
-        case '1':
-            ESP_LOGI(TAG, "Running native TCP benchmark (count=%d)", BENCH_COUNT);
-            native_run_tcp_bench(BENCH_COUNT);
+        case '1': case '2': case '3': case '4': case '5': case '6': {
+            printf("\nEnter count: ");
+            fflush(stdout);
+            uint32_t n = read_count();
+            printf("%" PRIu32 "\n", n);
+            if (n == 0 || n > 100000) {
+                ESP_LOGW(TAG, "Invalid count (use 1–100000)");
+                break;
+            }
+            switch (choice) {
+            case '1':
+                ESP_LOGI(TAG, "Running native TCP benchmark (count=%" PRIu32 ")", n);
+                native_run_tcp_bench(n, NULL);
+                break;
+            case '2':
+                ESP_LOGI(TAG, "Running WASM TCP benchmark (count=%" PRIu32 ")", n);
+                wasm_run_tcp_bench(n, NULL);
+                break;
+            case '3':
+                ESP_LOGI(TAG, "Running native UDP benchmark (count=%" PRIu32 ")", n);
+                native_run_udp_bench(n, NULL);
+                break;
+            case '4':
+                ESP_LOGI(TAG, "Running WASM UDP benchmark (count=%" PRIu32 ")", n);
+                wasm_run_udp_bench(n, NULL);
+                break;
+            case '5':
+                ESP_LOGI(TAG, "Running native Ping benchmark (count=%" PRIu32 ")", n);
+                native_run_ping_bench(n, NULL);
+                break;
+            case '6':
+                ESP_LOGI(TAG, "Running WASM Ping benchmark (count=%" PRIu32 ")", n);
+                wasm_run_ping_bench(n, NULL);
+                break;
+            default:
+                break;
+            }
             break;
-        case '2':
-            ESP_LOGI(TAG, "Running WASM TCP benchmark (count=%d)", BENCH_COUNT);
-            wasm_run_tcp_bench(BENCH_COUNT);
+        }
+        case '7': {
+            printf("\nEnter count: ");
+            fflush(stdout);
+            uint32_t n = read_count();
+            printf("%" PRIu32 "\n", n);
+            if (n == 0 || n > 100000) {
+                ESP_LOGW(TAG, "Invalid count (use 1–100000)");
+                break;
+            }
+            bench_result_t r[6];
+            memset(r, 0, sizeof(r));
+            ESP_LOGI(TAG, "Running all 6 benchmarks (count=%" PRIu32 ")...", n);
+            native_run_tcp_bench(n, &r[0]);
+            wasm_run_tcp_bench(n, &r[1]);
+            native_run_udp_bench(n, &r[2]);
+            wasm_run_udp_bench(n, &r[3]);
+            native_run_ping_bench(n, &r[4]);
+            /* Delay so LwIP releases ping sockets before WASM Ping (avoids "create socket failed") */
+            vTaskDelay(pdMS_TO_TICKS(1500));
+            wasm_run_ping_bench(n, &r[5]);
+            printf("name,count,ok,fail,total_us,per_iter_us\n");
+            printf("Native TCP,%" PRIu32 ",%" PRIu32 ",%" PRIu32 ",%" PRId64 ",%" PRId64 "\n", n, r[0].ok, r[0].fail, (int64_t)r[0].total_us, (int64_t)r[0].per_iter_us);
+            printf("WASM TCP,%" PRIu32 ",%" PRIu32 ",%" PRIu32 ",%" PRId64 ",%" PRId64 "\n", n, r[1].ok, r[1].fail, (int64_t)r[1].total_us, (int64_t)r[1].per_iter_us);
+            printf("Native UDP,%" PRIu32 ",%" PRIu32 ",%" PRIu32 ",%" PRId64 ",%" PRId64 "\n", n, r[2].ok, r[2].fail, (int64_t)r[2].total_us, (int64_t)r[2].per_iter_us);
+            printf("WASM UDP,%" PRIu32 ",%" PRIu32 ",%" PRIu32 ",%" PRId64 ",%" PRId64 "\n", n, r[3].ok, r[3].fail, (int64_t)r[3].total_us, (int64_t)r[3].per_iter_us);
+            printf("Native Ping,%" PRIu32 ",%" PRIu32 ",%" PRIu32 ",%" PRId64 ",%" PRId64 "\n", n, r[4].ok, r[4].fail, (int64_t)r[4].total_us, (int64_t)r[4].per_iter_us);
+            printf("WASM Ping,%" PRIu32 ",%" PRIu32 ",%" PRIu32 ",%" PRId64 ",%" PRId64 "\n", n, r[5].ok, r[5].fail, (int64_t)r[5].total_us, (int64_t)r[5].per_iter_us);
             break;
-        case '3':
-            ESP_LOGI(TAG, "Running native UDP benchmark (count=%d)", BENCH_COUNT);
-            native_run_udp_bench(BENCH_COUNT);
-            break;
-        case '4':
-            ESP_LOGI(TAG, "Running WASM UDP benchmark (count=%d)", BENCH_COUNT);
-            wasm_run_udp_bench(BENCH_COUNT);
-            break;
-        case '5':
-            ESP_LOGI(TAG, "Running native Ping benchmark (count=%d)", BENCH_COUNT);
-            native_run_ping_bench(BENCH_COUNT);
-            break;
-        case '6':
-            ESP_LOGI(TAG, "Running WASM Ping benchmark (count=%d)", BENCH_COUNT);
-            wasm_run_ping_bench(BENCH_COUNT);
-            break;
+        }
         case '0':
             ESP_LOGI(TAG, "Exit requested; stopping menu loop.");
             return;
         default:
-            ESP_LOGW(TAG, "Unknown choice '%c'; please select 0–6.", choice);
+            ESP_LOGW(TAG, "Unknown choice '%c'; please select 0–7.", choice);
             break;
         }
     }
