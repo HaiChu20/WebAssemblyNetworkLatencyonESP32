@@ -38,38 +38,28 @@ def create_udp_socket(host: str, port: int) -> socket.socket:
     return sock
 
 
-def handle_tcp_client(conn: socket.socket, addr: Tuple[str, int]) -> None:
-    peer = "%s:%d" % addr
-    logging.debug("TCP connection from %s", peer)
-    with conn:
-        while True:
-            try:
-                data = conn.recv(BUFFER_SIZE)
-            except ConnectionResetError:
-                logging.debug("TCP connection reset by peer %s", peer)
-                break
-
-            if not data:
-                break
-
-            # Echo back the exact payload
-            conn.sendall(data)
-
-    logging.debug("TCP connection closed %s", peer)
-
-
 def tcp_echo_loop(host: str, port: int) -> None:
     sock = create_tcp_socket(host, port)
     with sock:
         while True:
             conn, addr = sock.accept()
-            client_thread = threading.Thread(
-                target=handle_tcp_client,
-                args=(conn, addr),
-                daemon=True,
-                name=f"tcp-{addr[0]}:{addr[1]}",
-            )
-            client_thread.start()
+            peer = "%s:%d" % addr
+            logging.debug("TCP connection from %s", peer)
+            with conn:
+                while True:
+                    try:
+                        data = conn.recv(BUFFER_SIZE)
+                    except ConnectionResetError:
+                        logging.debug("TCP connection reset by peer %s", peer)
+                        break
+
+                    if not data:
+                        break
+
+                    # Echo back the exact payload
+                    conn.sendall(data)
+
+            logging.debug("TCP connection closed %s", peer)
 
 
 def udp_echo_loop(host: str, port: int) -> None:
