@@ -2,6 +2,8 @@
 #include <stddef.h>
 
 #include "bench.h"
+/* Share server IP and ports with device firmware (single source of truth). */
+#include "../device/main/wasm_bench_config.h"
 
 // ---------------------------------------------------------------------------
 // Host imports: device (WASM3) provides these at runtime. Use import_module/import_name
@@ -84,15 +86,11 @@ stats_add(wasm_bench_stats_t *s, int64_t rtt_us)
 
 // ---------------------------------------------------------------------------
 // Host / port constants for the benchmark.
-// IMPORTANT: HOST_STR and ports must match SERVER_IP, TCP_ECHO_PORT and
-// UDP_ECHO_PORT in Code/device/main/wasm_bench_config.h.
-// Edit these values if you change the server config.
+// We reuse SERVER_IP, TCP_ECHO_PORT and UDP_ECHO_PORT from wasm_bench_config.h
+// so device and WASM module share one source of truth.
 // ---------------------------------------------------------------------------
 
-static const char HOST_STR[] = "192.168.1.100"; // <-- edit to match SERVER_IP
-
-#define TCP_ECHO_PORT 9000
-#define UDP_ECHO_PORT 9001
+static const char HOST_STR[] = SERVER_IP;
 
 // ---------------------------------------------------------------------------
 // Exported benchmark functions

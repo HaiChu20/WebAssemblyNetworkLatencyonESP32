@@ -15,6 +15,9 @@
 
 static const char *TAG = "app_main";
 
+#define COUNT_MIN 1
+#define COUNT_MAX 100000
+
 static void
 print_menu(void)
 {
@@ -114,8 +117,8 @@ app_main(void)
             fflush(stdout);
             uint32_t n = read_count();
             printf("%" PRIu32 "\n", n);
-            if (n == 0 || n > 100000) {
-                ESP_LOGW(TAG, "Invalid count (use 1–100000)");
+            if (n < COUNT_MIN || n > COUNT_MAX) {
+                ESP_LOGW(TAG, "Invalid count (use %d–%d)", COUNT_MIN, COUNT_MAX);
                 break;
             }
             switch (choice) {
@@ -153,8 +156,8 @@ app_main(void)
             fflush(stdout);
             uint32_t n = read_count();
             printf("%" PRIu32 "\n", n);
-            if (n == 0 || n > 100000) {
-                ESP_LOGW(TAG, "Invalid count (use 1–100000)");
+            if (n < COUNT_MIN || n > COUNT_MAX) {
+                ESP_LOGW(TAG, "Invalid count (use %d–%d)", COUNT_MIN, COUNT_MAX);
                 break;
             }
             bench_result_t r[6];
