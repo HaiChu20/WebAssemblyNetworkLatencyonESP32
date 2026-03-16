@@ -1,6 +1,9 @@
 # ESP-IDF device build output
 device/build/
 
+# WASM3 component (add as submodule or copy manually; remove this line if you commit wasm3)
+device/components/wasm3/
+
 wasm_module/*.o
 wasm_module/*.wasm
 wasm_module/bench_embedded.wasm
